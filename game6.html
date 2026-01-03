@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🎉 真心話大冒險</title>
+    <style>
+        /* --- 基礎樣式 (原版 game.html 視覺) --- */
+        body { font-family: 'Arial', sans-serif; background-color: #f0f2f5; display: flex; flex-direction: column; align-items: center; padding: 20px; }
+        .card { background: white; padding: 2rem; border-radius: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); width: 90%; max-width: 500px; text-align: center; margin-bottom: 20px; position: relative; }
+        h1 { color: #ff4757; }
+        #display-area { font-size: 1.5rem; min-height: 100px; display: flex; align-items: center; justify-content: center; margin: 20px 0; font-weight: bold; color: #2f3542; border: 2px dashed #dfe4ea; border-radius: 10px; padding: 10px; }
+        .btn-group { display: flex; gap: 10px; justify-content: center; }
+        
+        button { padding: 12px 25px; border: none; border-radius: 50px; cursor: pointer; font-size: 1rem; transition: 0.3s; color: white; }
+        button:hover { opacity: 0.8; transform: scale(1.05); }
+        .btn-truth { background-color: #1e90ff; }
+        .btn-dare { background-color: #ff4757; }
+        .btn-orange { background-color: #ffa502; width: 100%; margin-top: 10px; }
+        .btn-enter { background-color: #ff5e62; width: 100%; margin-top: 20px; font-weight: bold; }
+        
+        /* 編輯區樣式 */
+        .edit-section { width: 90%; max-width: 500px; background: #fff; padding: 20px; border-radius: 15px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); margin-top: 10px; }
+        textarea { width: 100%; height: 100px; margin-top: 10px; border-radius: 8px; border: 1px solid #ccc; padding: 10px; box-sizing: border-box; }
+        h3 { margin-bottom: 5px; color: #57606f; }
+        input[type="text"] { width: 100%; padding: 15px; border-radius: 12px; border: 1px solid #ddd; margin-bottom: 15px; box-sizing: border-box; font-size: 1rem; }
+
+        /* 恢復按鈕：縮短且置中 */
+        .btn-reset-wrap { text-align: center; margin-top: 15px; }
+        .btn-reset { background-color: #747d8c; padding: 10px 30px; font-size: 0.9rem; width: auto; display: inline-block; }
+
+        /* 分頁功能 */
+        .hidden { display: none !important; }
+        .btn-skip-link { position: absolute; right: 20px; bottom: 15px; background: none; color: #aaa; border: none; font-size: 0.8rem; text-decoration: underline; padding: 0; }
+        .btn-skip-link:hover { color: #777; transform: none; opacity: 1; }
+        .seat-tag { display: inline-block; background: #f1f2f6; padding: 5px 12px; border-radius: 50px; margin: 5px; font-weight: bold; color: #57606f; font-size: 0.9rem; border: 1px solid #dfe4ea; }
+    </style>
+</head>
+<body>
+
+    <div id="page-seating" style="width: 100%; display: flex; flex-direction: column; align-items: center;">
+        <div class="card">
+            <h1>🎲 準備開始遊戲</h1>
+            <h3>安排座位</h3>
+            <p style="font-size: 0.9rem; color: #888;">輸入名單 (用空格或逗號隔開)：</p>
+            <input type="text" id="names-input" placeholder="例如:小明 小華 小美..." oninput="saveContent()">
+            
+            <button class="btn-orange" onclick="shuffleSeats()">🔀 隨機排位</button>
+            <div id="seat-results" style="margin-top: 20px;"></div>
+            <button id="btn-enter-game" class="btn-enter hidden" onclick="goToGame()">進入遊戲 ➔</button>
+            <button id="btn-skip-seating" class="btn-skip-link" onclick="skipToGame()">跳過座位安排</button>
+        </div>
+    </div>
+
+    <div id="page-game" class="hidden" style="width: 100%; flex-direction: column; align-items: center;">
+        <div class="card">
+            <h1>🎲 真心話大冒險</h1>
+            <div id="display-area">準備好就開始吧！</div>
+            <div class="btn-group">
+                <button class="btn-truth" onclick="draw('truth')">💙 真心話</button>
+                <button class="btn-dare" onclick="draw('dare')">❤️ 大冒險</button>
+            </div>
+            <button onclick="goToSeating()" style="background: none; color: #ccc; font-size: 0.8rem; margin-top: 20px; text-decoration: underline;">← 返回修改座位</button>
+        </div>
+
+        <div class="edit-section">
+            <h3>✏️ 編輯題目 (每行一個)</h3>
+            <div>
+                <h4>💙 真心話清單</h4>
+                <textarea id="truth-input" oninput="saveContent()">
+你說過最大的謊是什麼時候？
+近期做過最愧疚的事是什麼?
+近期最讓你傷心的事是什麼?
+近期最讓你生氣的事是什麼?
+人生中最尷尬的兩件事情是什麼?
+人生中最後悔的事是什麼?
+有沒有偷偷喜歡過朋友的另一半或是前任?
+吵過最兇的架是什麼?什麼時候?為什麼?
+你有對現場的某個人心動過嗎？
+要跟在場的人在一起的話會選誰?為什麼?
+分享一個跟前任或現任或曖昧對象或喜歡的人的故事
+喜歡過幾個人?誰啊?(快說啦)
+認識的人中最符合你理想型的人是誰?
+有沒有可跟同性在一起?
+你有同時跟很多人曖昧過嗎?
+對在場所有人的第一印象
+對現場某個人的第一印象與現在最大的差別是什麼?
+說一個你完全沒講過的秘密
+如果你可以跟現場的一個人交換靈魂一天，你會選誰？為什麼?
+喜歡自己的vs自己喜歡的
+如果要跟現場的一個人借10萬元 你會選誰?為什麼?
+如果世界末日只能帶現場一個人在孤島生存，你會選誰?為什麼?
+說出一個你到現在還相信的迷信
+如果要把你跟現場某個人關在同一個房間3天 你會選誰?為什麼?
+如果要在現場選一個人一起去鬼屋 你會選誰?為什麼?
+說出現場每個人身上最讓你羨慕的優點(一人一個)
+如果要跟在場的一個人結婚 你會選誰?為什麼?
+說出一個你曾經為了吸引喜歡的人注意而做的傻事
+如果你擁有一台時光機 你想回到過去還是去未來?為什麼?
+你覺得交友圈內哪兩個人最有可能瞞著大家偷偷在一起?
+如果你的另一半出軌現場的某個人 如果是誰會讓你最意外?
+說出一件你覺得自己非常有魅力但其他人都沒發現的小地方</textarea>
+            </div>
+            <div>
+                <h4>❤️ 大冒險清單</h4>
+                <textarea id="dare-input" oninput="saveContent()">
+模仿現場的一個人，直到大家猜出來
+跟左邊的人抱3秒
+跳舞或唱歌或任一個才藝表演
+戴耳機(聽音樂)打電話給一個人看另一人唇語講話
+對大家指定的在場的一個人告白(要認真一點啦)(不能只說我喜歡你)
+朗讀你手機裡最新的一則私訊
+給我們看IG的前五個reels
+玩完前不能使用手機
+對著鏡子稱讚自己5個不同的優點(認真喔)
+跟左邊的人玩「交杯水」
+閉著眼睛摸所有人的手，並猜人
+把你的手機桌面換成跟對面的人的合照一天
+選一個人手牽手直到下一輪
+用非慣用手畫一隻動物並發限動讓朋友猜
+大家幫你想一個綽號 然後直到遊戲結束都要被這個綽號稱呼</textarea>
+            </div>
+            
+            <div class="btn-reset-wrap">
+                <button class="btn-reset" onclick="resetDefaults()">🔄 恢復預設題目</button>
+            </div>
+            <p style="font-size: 0.7rem; color: #bbb; text-align: center; margin-top: 10px;">* 題目與名單會自動即時儲存</p>
+        </div>
+    </div>
+
+    <script>
+        // --- 🔒 密碼檢查邏輯 ---
+        const MY_PASS = "1234"; // 你可以在這裡修改你的密碼
+        const userPass = prompt("🔑 請輸入進入密碼：");
+        if (userPass === MY_PASS) {
+            document.getElementById('main-body').classList.remove('hidden');
+        } else {
+            alert("密碼錯誤！");
+            document.body.innerHTML = "<h2 style='margin-top:50px; text-align:center;'>🔒 密碼錯誤，請重新整理頁面</h2>";
+        }
+        
+        // 即時自動儲存功能
+        function saveContent() {
+            localStorage.setItem('truthList', document.getElementById('truth-input').value);
+            localStorage.setItem('dareList', document.getElementById('dare-input').value);
+            localStorage.setItem('savedNames', document.getElementById('names-input').value);
+        }
+
+        function goToGame() {
+            document.getElementById('page-seating').classList.add('hidden');
+            document.getElementById('page-game').classList.remove('hidden');
+            document.getElementById('page-game').style.display = 'flex';
+            window.scrollTo(0,0);
+        }
+
+        function skipToGame() { goToGame(); }
+
+        function goToSeating() {
+            document.getElementById('page-game').classList.add('hidden');
+            document.getElementById('page-game').style.display = 'none';
+            document.getElementById('page-seating').classList.remove('hidden');
+        }
+
+        function shuffleSeats() {
+            const input = document.getElementById('names-input').value;
+            let names = input.split(/[ ,，\n]+/).filter(n => n.trim() !== "");
+            
+            if (names.length < 2) {
+                alert("請輸入至少兩個名字喔！"); return;
+            }
+
+            for (let i = names.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [names[i], names[j]] = [names[j], names[i]];
+            }
+
+            const resultDiv = document.getElementById('seat-results');
+            resultDiv.innerHTML = "<h4>目前的座位順序：</h4>";
+            names.forEach((name, index) => {
+                const span = document.createElement('span');
+                span.className = 'seat-tag';
+                span.innerText = `${index + 1}. ${name}`;
+                resultDiv.appendChild(span);
+                if (index < names.length - 1) {
+                    const arrow = document.createElement('span');
+                    arrow.innerText = " ➔ ";
+                    arrow.style.color = "#ccc";
+                    resultDiv.appendChild(arrow);
+                }
+            });
+            
+            document.getElementById('btn-enter-game').classList.remove('hidden');
+            document.getElementById('btn-skip-seating').classList.add('hidden');
+            saveContent();
+        }
+
+        function draw(type) {
+            const inputId = type === 'truth' ? 'truth-input' : 'dare-input';
+            const list = document.getElementById(inputId).value.split('\n').filter(item => item.trim() !== "");
+            
+            if (list.length === 0) {
+                alert("請先輸入一些題目喔！"); return;
+            }
+
+            const result = list[Math.floor(Math.random() * list.length)];
+            const display = document.getElementById('display-area');
+            display.innerText = result;
+            display.style.color = type === 'truth' ? '#1e90ff' : '#ff4757';
+            saveContent();
+        }
+
+        function resetDefaults() {
+            if (confirm("確定要恢復預設嗎？這會清除你目前的所有修改。")) {
+                localStorage.clear();
+                location.reload();
+            }
+        }
+
+        window.onload = function() {
+            if(localStorage.getItem('truthList')) document.getElementById('truth-input').value = localStorage.getItem('truthList');
+            if(localStorage.getItem('dareList')) document.getElementById('dare-input').value = localStorage.getItem('dareList');
+            if(localStorage.getItem('savedNames')) document.getElementById('names-input').value = localStorage.getItem('savedNames');
+        };
+    </script>
+</body>
+</html>
